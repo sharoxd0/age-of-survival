@@ -1,0 +1,75 @@
+[gd_scene load_steps=2 format=3 uid="uid://bo0wlgr0tedhw"]
+
+[ext_resource type="Script" uid="uid://cmok86x22n6nc" path="res://scripts/PanelWorker.gd" id="1_38by2"]
+
+[node name="PanelWorker" type="Panel"]
+custom_minimum_size = Vector2(40, 0)
+offset_right = 215.0
+offset_bottom = 191.0
+script = ExtResource("1_38by2")
+
+[node name="LabelNombre" type="Label" parent="."]
+layout_mode = 0
+offset_right = 108.0
+offset_bottom = 23.0
+text = "Equipamiento"
+
+[node name="HBoxSlots" type="HBoxContainer" parent="."]
+layout_mode = 0
+offset_left = 2.0
+offset_top = 54.0
+offset_right = 174.0
+offset_bottom = 94.0
+
+[node name="SlotHand" type="Panel" parent="HBoxSlots"]
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+
+[node name="LabelItemName" type="Label" parent="HBoxSlots/SlotHand"]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 23.0
+
+[node name="SlotChest" type="Panel" parent="HBoxSlots"]
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+
+[node name="LabelItemName" type="Label" parent="HBoxSlots/SlotChest"]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 23.0
+
+[node name="SlotOffHand" type="Panel" parent="HBoxSlots"]
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+
+[node name="LabelItemName" type="Label" parent="HBoxSlots/SlotOffHand"]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 23.0
+
+[node name="SlotExtra" type="Panel" parent="HBoxSlots"]
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+
+[node name="LabelItemName" type="Label" parent="HBoxSlots/SlotExtra"]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 23.0
+
+[node name="ButtonEquiparHacha" type="Button" parent="."]
+layout_mode = 0
+offset_left = 10.0
+offset_top = 98.0
+offset_right = 101.0
+offset_bottom = 129.0
+text = "test Hacha
+"
+
+[node name="ButtonDeseleccionar" type="Button" parent="."]
+layout_mode = 0
+offset_left = 10.0
+offset_top = 141.0
+offset_right = 127.0
+offset_bottom = 172.0
+text = "Deseleccionar"

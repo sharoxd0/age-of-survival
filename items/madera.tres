@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="ItemData" load_steps=3 format=3 uid="uid://dncurgttw255m"]
+
+[ext_resource type="Texture2D" uid="uid://bbgm360mu4j7k" path="res://assets/items/madera.png" id="1_eemhj"]
+[ext_resource type="Script" uid="uid://d0qc0amhaatfv" path="res://items/ItemData.gd" id="1_y6mc1"]
+
+[resource]
+script = ExtResource("1_y6mc1")
+id = "madera"
+nombre = "Madera"
+descripcion = "algo"
+icono = ExtResource("1_eemhj")
+metadata/_custom_type_script = "uid://d0qc0amhaatfv"

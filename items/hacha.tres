@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="ItemData" load_steps=3 format=3 uid="uid://htgf25av2gw6"]
+
+[ext_resource type="Texture2D" uid="uid://c8k4csl8d4pud" path="res://assets/items/axe_001.png" id="1_w38sg"]
+[ext_resource type="Script" uid="uid://d0qc0amhaatfv" path="res://items/ItemData.gd" id="2_30ngu"]
+
+[resource]
+script = ExtResource("2_30ngu")
+id = "hacha"
+nombre = "Hacha"
+descripcion = "Herramienta básica para cortar árboles. También puede usarse como arma."
+apilable = false
+icono = ExtResource("1_w38sg")
+slot_kind = "hand"
+two_handed = true
+"daño" = 5
+velocidad_ataque = 1.2

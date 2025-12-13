@@ -1,0 +1,175 @@
+[gd_scene load_steps=17 format=4 uid="uid://cfbf6ujfnqilr"]
+
+[ext_resource type="Script" uid="uid://dcjimi0hyr4dq" path="res://scripts/world/world.gd" id="1_7g83o"]
+[ext_resource type="Texture2D" uid="uid://lkrqeohoo0gd" path="res://assets/piedra_001.png" id="1_kqs1s"]
+[ext_resource type="PackedScene" uid="uid://c3drk3y821x0e" path="res://scenes/Worker.tscn" id="2_32lhk"]
+[ext_resource type="Script" uid="uid://c7c7u2jlkh1hu" path="res://scripts/ground_tile_map_layer.gd" id="3_d1c63"]
+[ext_resource type="Texture2D" uid="uid://c1lubwehyefb3" path="res://assets/arbol_001.png" id="4_1lgw5"]
+[ext_resource type="Texture2D" uid="uid://by4sxxq8346it" path="res://assets/items/madera_002.png" id="5_b3faq"]
+[ext_resource type="Script" uid="uid://dytlpp6bre7tm" path="res://scripts/panel_inventario.gd" id="6_hlk0d"]
+[ext_resource type="PackedScene" uid="uid://bo0wlgr0tedhw" path="res://scenes/PanelWorker.tscn" id="7_0uv0p"]
+
+[sub_resource type="NavigationPolygon" id="NavigationPolygon_32lhk"]
+vertices = PackedVector2Array(32, -16, 0, 0, -32, -16, 0, -32)
+polygons = Array[PackedInt32Array]([PackedInt32Array(0, 1, 2, 3)])
+outlines = Array[PackedVector2Array]([PackedVector2Array(0, -32, -32, -16, 0, 0, 32, -16)])
+agent_radius = 0.0
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_7g83o"]
+texture = ExtResource("1_kqs1s")
+texture_region_size = Vector2i(64, 64)
+0:0/0 = 0
+0:0/0/navigation_layer_0/polygon = SubResource("NavigationPolygon_32lhk")
+
+[sub_resource type="TileSet" id="TileSet_d1c63"]
+tile_shape = 1
+tile_layout = 5
+tile_size = Vector2i(64, 32)
+navigation_layer_0/layers = 1
+sources/0 = SubResource("TileSetAtlasSource_7g83o")
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_hlk0d"]
+texture = ExtResource("4_1lgw5")
+texture_region_size = Vector2i(64, 64)
+0:0/0 = 0
+0:0/0/texture_origin = Vector2i(0, 32)
+0:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(0, -32, -32, -16, 0, 0, 32, -16)
+0:0/0/physics_layer_0/polygon_0/one_way = true
+
+[sub_resource type="TileSet" id="TileSet_0uv0p"]
+tile_shape = 1
+tile_layout = 5
+tile_size = Vector2i(64, 32)
+physics_layer_0/collision_layer = 1
+sources/0 = SubResource("TileSetAtlasSource_hlk0d")
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_ygioq"]
+texture = ExtResource("5_b3faq")
+0:0/0 = 0
+
+[sub_resource type="TileSet" id="TileSet_pdh0q"]
+tile_shape = 1
+tile_layout = 5
+tile_size = Vector2i(16, 8)
+sources/1 = SubResource("TileSetAtlasSource_ygioq")
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hlk0d"]
+bg_color = Color(0.27784097, 0.11546315, 0.030259836, 1)
+
+[node name="World" type="Node2D"]
+script = ExtResource("1_7g83o")
+
+[node name="Ground_TileMapLayer" type="TileMapLayer" parent="."]
+tile_map_data = PackedByteArray("AAD6/wIAAAAAAAAAAAD6/wMAAAAAAAAAAAD6/wQAAAAAAAAAAAD6/wUAAAAAAAAAAAD7//3/AAAAAAAAAAD7//7/AAAAAAAAAAD7////AAAAAAAAAAD7/wAAAAAAAAAAAAD7/wMAAAAAAAAAAAD7/wQAAAAAAAAAAAD7/wUAAAAAAAAAAAD8//3/AAAAAAAAAAD8//7/AAAAAAAAAAD8////AAAAAAAAAAD8/wAAAAAAAAAAAAD8/wEAAAAAAAAAAAD8/wIAAAAAAAAAAAD8/wMAAAAAAAAAAAD8/wQAAAAAAAAAAAD8/wUAAAAAAAAAAAD9//3/AAAAAAAAAAD9//7/AAAAAAAAAAD9////AAAAAAAAAAD9/wAAAAAAAAAAAAD9/wEAAAAAAAAAAAD9/wIAAAAAAAAAAAD9/wMAAAAAAAAAAAD9/wQAAAAAAAAAAAD9/wUAAAAAAAAAAAD+//3/AAAAAAAAAAD+//7/AAAAAAAAAAD+////AAAAAAAAAAD+/wAAAAAAAAAAAAD+/wEAAAAAAAAAAAD+/wIAAAAAAAAAAAD+/wMAAAAAAAAAAAD+/wQAAAAAAAAAAAD+/wUAAAAAAAAAAAD///3/AAAAAAAAAAD///7/AAAAAAAAAAD/////AAAAAAAAAAD//wAAAAAAAAAAAAD//wEAAAAAAAAAAAD//wIAAAAAAAAAAAD//wMAAAAAAAAAAAD//wQAAAAAAAAAAAD//wUAAAAAAAAAAAAAAP3/AAAAAAAAAAAAAP7/AAAAAAAAAAAAAP//AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAIAAAAAAAAAAAAAAAMAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAUAAAAAAAAAAAABAP3/AAAAAAAAAAABAP7/AAAAAAAAAAABAP//AAAAAAAAAAABAAAAAAAAAAAAAAABAAEAAAAAAAAAAAABAAIAAAAAAAAAAAABAAMAAAAAAAAAAAABAAQAAAAAAAAAAAABAAUAAAAAAAAAAAACAP3/AAAAAAAAAAACAP7/AAAAAAAAAAACAP//AAAAAAAAAAACAAAAAAAAAAAAAAACAAEAAAAAAAAAAAACAAIAAAAAAAAAAAACAAMAAAAAAAAAAAACAAQAAAAAAAAAAAACAAUAAAAAAAAAAAADAP3/AAAAAAAAAAADAP7/AAAAAAAAAAADAP//AAAAAAAAAAADAAAAAAAAAAAAAAADAAEAAAAAAAAAAAADAAIAAAAAAAAAAAADAAMAAAAAAAAAAAADAAQAAAAAAAAAAAADAAUAAAAAAAAAAAAEAP3/AAAAAAAAAAAEAP7/AAAAAAAAAAAEAP//AAAAAAAAAAAEAAAAAAAAAAAAAAAEAAEAAAAAAAAAAAAEAAIAAAAAAAAAAAAEAAMAAAAAAAAAAAAEAAQAAAAAAAAAAAAEAAUAAAAAAAAAAAAFAP3/AAAAAAAAAAAFAP7/AAAAAAAAAAAFAP//AAAAAAAAAAAFAAAAAAAAAAAAAAAFAAEAAAAAAAAAAAAFAAIAAAAAAAAAAAAFAAMAAAAAAAAAAAAFAAQAAAAAAAAAAAAFAAUAAAAAAAAAAAD6//3/AAAAAAAAAAD6//7/AAAAAAAAAAD6////AAAAAAAAAAD6/wAAAAAAAAAAAAD6/wEAAAAAAAAAAAD7/wEAAAAAAAAAAAD7/wIAAAAAAAAAAAA=")
+tile_set = SubResource("TileSet_d1c63")
+script = ExtResource("3_d1c63")
+
+[node name="Resources_TileMapLayer" type="TileMapLayer" parent="."]
+tile_map_data = PackedByteArray("AAD8////AAAAAAAAAAD8/wAAAAAAAAAAAAD8/wEAAAAAAAAAAAD9/wAAAAAAAAAAAAD9/wEAAAAAAAAAAAD+//7/AAAAAAAAAAD///7/AAAAAAAAAAAAAP7/AAAAAAAAAAD+/wMAAAAAAAAAAAD//wMAAAAAAAAAAAAAAAMAAAAAAAAAAAD6/wAAAAAAAAAAAAD6/wEAAAAAAAAAAAACAAAAAAAAAAAAAAADAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAACAP//AAAAAAAAAAADAP//AAAAAAAAAAAEAP//AAAAAAAAAAACAAEAAAAAAAAAAAADAAMAAAAAAAAAAAAEAAMAAAAAAAAAAAADAAQAAAAAAAAAAAA=")
+tile_set = SubResource("TileSet_0uv0p")
+
+[node name="SmallResources_TileMapLayer" type="TileMapLayer" parent="."]
+tile_map_data = PackedByteArray("AAD6////AQAAAAAAAAD6/wEAAQAAAAAAAAD5/wAAAQAAAAAAAAD5////AQAAAAAAAAD+//v/AQAAAAAAAAD///v/AQAAAAAAAAD+//r/AQAAAAAAAAA=")
+tile_set = SubResource("TileSet_pdh0q")
+
+[node name="Camera2D" type="Camera2D" parent="."]
+zoom = Vector2(2, 2)
+
+[node name="Worker" parent="." instance=ExtResource("2_32lhk")]
+
+[node name="UI" type="CanvasLayer" parent="."]
+
+[node name="VBoxContainer" type="VBoxContainer" parent="UI"]
+anchors_preset = 6
+anchor_left = 1.0
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = -79.0
+offset_top = -33.0
+offset_bottom = 33.0
+grow_horizontal = 0
+grow_vertical = 2
+
+[node name="Button2" type="Button" parent="UI/VBoxContainer"]
+layout_mode = 2
+text = "Almacen
+"
+
+[node name="Button" type="Button" parent="UI/VBoxContainer"]
+layout_mode = 2
+text = "construir
+"
+
+[node name="ButtonSpawnWorker" type="Button" parent="UI/VBoxContainer"]
+layout_mode = 2
+text = "Spawn Worker"
+
+[node name="PanelInventario" type="Panel" parent="UI"]
+anchors_preset = -1
+anchor_left = 0.5
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_right = 40.0
+offset_bottom = 40.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_hlk0d")
+script = ExtResource("6_hlk0d")
+
+[node name="MarginContainer" type="MarginContainer" parent="UI/PanelInventario"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Grid" type="GridContainer" parent="UI/PanelInventario/MarginContainer"]
+layout_mode = 2
+theme_override_constants/h_separation = 8
+theme_override_constants/v_separation = 8
+columns = 4
+
+[node name="PanelRecurso" type="Panel" parent="UI"]
+offset_right = 157.0
+offset_bottom = 170.0
+
+[node name="LabelNombre" type="Label" parent="UI/PanelRecurso"]
+layout_mode = 0
+offset_right = 90.0
+offset_bottom = 23.0
+
+[node name="LabelDescripcion" type="Label" parent="UI/PanelRecurso"]
+layout_mode = 0
+offset_top = 27.0
+offset_right = 90.0
+offset_bottom = 50.0
+
+[node name="LabelLoot" type="Label" parent="UI/PanelRecurso"]
+layout_mode = 0
+offset_top = 65.0
+offset_right = 40.0
+offset_bottom = 88.0
+
+[node name="LabelRequisito" type="Label" parent="UI/PanelRecurso"]
+layout_mode = 0
+offset_left = 12.0
+offset_top = 106.0
+offset_right = 52.0
+offset_bottom = 129.0
+
+[node name="BotonRecolectar" type="Button" parent="UI/PanelRecurso"]
+layout_mode = 0
+offset_left = 34.0
+offset_top = 132.0
+offset_right = 124.0
+offset_bottom = 163.0
+text = "Recolectar"
+
+[node name="PanelWorker" parent="UI" groups=["workers"] instance=ExtResource("7_0uv0p")]
+visible = false
+offset_left = 2.0
+offset_top = 103.0
+offset_right = 2.0
+offset_bottom = 103.0
+
+[connection signal="pressed" from="UI/PanelRecurso/BotonRecolectar" to="." method="_on_boton_recolectar_pressed"]
