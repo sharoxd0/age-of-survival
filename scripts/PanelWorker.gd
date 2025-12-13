@@ -1,7 +1,9 @@
 extends Panel
 
+@export var world: Node2D
+
 # ============================================================
-#        REFERENCIAS A NODOS (TIPADAS)
+# REFERENCIAS A NODOS
 # ============================================================
 @onready var label_title: Label = $LabelNombre
 
@@ -19,11 +21,9 @@ extends Panel
 @onready var btn_deselect: Button  = $ButtonDeseleccionar
 
 # ============================================================
-#        WORKER SELECCIONADO
+# WORKER SELECCIONADO
 # ============================================================
 var worker_ref: CharacterBody2D = null
-
-signal deselect_requested
 
 # ============================================================
 # READY
@@ -33,7 +33,7 @@ func _ready() -> void:
 		btn_test_hacha.pressed.connect(_on_test_hacha)
 
 	if btn_deselect:
-		btn_deselect.pressed.connect(_on_deselect_pressed)
+		btn_deselect.pressed.connect(_on_btn_deselect_pressed)
 
 	visible = false
 
@@ -41,25 +41,43 @@ func _ready() -> void:
 # ASIGNAR WORKER
 # ============================================================
 func set_worker(worker: CharacterBody2D) -> void:
-	# desconectar del anterior
-	if worker_ref != null:
-		if worker_ref.is_connected("cargo_changed", Callable(self, "_on_cargo_changed")):
-			worker_ref.disconnect("cargo_changed", Callable(self, "_on_cargo_changed"))
+	_clear_worker_connection()
 
 	worker_ref = worker
+	if worker_ref == null:
+		visible = false
+		return
+
 	label_title.text = "Worker seleccionado"
 	visible = true
 
-	if worker_ref != null:
-		worker_ref.connect("cargo_changed", Callable(self, "_on_cargo_changed"))
+	worker_ref.cargo_changed.connect(_on_cargo_changed)
 
 	_update_slots()
 
 # ============================================================
-# BOTÓN DESELECCIONAR
+# BOTÓN DESELECCIONAR (CLAVE)
 # ============================================================
-func _on_deselect_pressed() -> void:
-	deselect_requested.emit()
+func _on_btn_deselect_pressed() -> void:
+	if world == null or world.world_workers == null:
+		return
+
+	# 🔑 deselección REAL (lógica)
+	world.world_workers.deselect_worker()
+
+	# 🔒 limpieza LOCAL del panel
+	_clear_worker_connection()
+	visible = false
+
+# ============================================================
+# LIMPIEZA SEGURA
+# ============================================================
+func _clear_worker_connection() -> void:
+	if worker_ref != null and is_instance_valid(worker_ref):
+		if worker_ref.cargo_changed.is_connected(_on_cargo_changed):
+			worker_ref.cargo_changed.disconnect(_on_cargo_changed)
+
+	worker_ref = null
 
 # ============================================================
 # BOTÓN TEST – EQUIPAR HACHA
@@ -68,12 +86,12 @@ func _on_test_hacha() -> void:
 	if worker_ref == null:
 		return
 
-	var path := "res://items/hacha.tres"
+	var path: String = "res://items/hacha.tres"
 	if not ResourceLoader.exists(path):
 		push_error("PanelWorker: no existe hacha.tres")
 		return
 
-	var hacha := load(path) as ItemData
+	var hacha: ItemData = load(path)
 	if hacha == null:
 		return
 
@@ -91,45 +109,44 @@ func _update_slots() -> void:
 
 	var eq: Dictionary = worker_ref.equipment
 
-	# ---------------- HAND ----------------
-	var it_hand: ItemData = eq.get("hand", null)
-	if it_hand != null:
+	# HAND
+	var it_hand: ItemData = eq.get("hand")
+	if it_hand:
 		slot_hand.modulate = Color(0.6, 1.0, 0.6)
 		label_hand.text = it_hand.nombre
 	else:
 		slot_hand.modulate = Color(0.25, 0.25, 0.25)
 		label_hand.text = "mano"
 
-	# ---------------- CHEST ----------------
-	var it_chest: ItemData = eq.get("chest", null)
-	if it_chest != null:
+	# CHEST
+	var it_chest: ItemData = eq.get("chest")
+	if it_chest:
 		slot_chest.modulate = Color(0.7, 0.7, 1.0)
 		label_chest.text = it_chest.nombre
 	else:
 		slot_chest.modulate = Color(0.25, 0.25, 0.25)
 		label_chest.text = "pecho"
 
-	# ---------------- OFF-HAND ----------------
-	var it_off: ItemData = eq.get("off_hand", null)
-	if it_off != null:
+	# OFF HAND
+	var it_off: ItemData = eq.get("off_hand")
+	if it_off:
 		slot_off_hand.modulate = Color(0.7, 0.9, 1.0)
 		label_off_hand.text = it_off.nombre
 	else:
 		slot_off_hand.modulate = Color(0.25, 0.25, 0.25)
 		label_off_hand.text = "mano 2"
 
-	# ---------------- CARGO ----------------
+	# CARGO (slot único)
 	var cargo: Array[ItemData] = worker_ref.cargo
 	if cargo.is_empty():
 		label_extra.text = "vacío"
 		slot_extra.modulate = Color(0.25, 0.25, 0.25)
 	else:
-		var it_extra: ItemData = cargo[0]
-		label_extra.text = it_extra.nombre
+		label_extra.text = cargo[0].nombre
 		slot_extra.modulate = Color(1.0, 0.9, 0.4)
 
 # ============================================================
-# SEÑAL CARGO
+# SEÑAL DE CARGO
 # ============================================================
 func _on_cargo_changed() -> void:
 	_update_slots()
