@@ -1,0 +1,14 @@
+[gd_scene load_steps=2 format=3 uid="uid://jjpuhw6ume2h"]
+
+[ext_resource type="Script" uid="uid://d24b6ifr1clon" path="res://scripts/ui/recipe_slot.gd" id="1_xl4o6"]
+
+[node name="RecipeSlot" type="Button"]
+offset_right = 8.0
+offset_bottom = 8.0
+script = ExtResource("1_xl4o6")
+
+[node name="Icono" type="TextureRect" parent="."]
+layout_mode = 0
+offset_top = 4.0
+offset_right = 8.0
+offset_bottom = 4.0
