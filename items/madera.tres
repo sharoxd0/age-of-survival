@@ -7,6 +7,8 @@
 script = ExtResource("1_y6mc1")
 id = "madera"
 nombre = "Madera"
-descripcion = "algo"
+descripcion = "Una rama seca. Útil como combustible o para fabricar herramientas simples."
 icono = ExtResource("1_eemhj")
+categorias = Array[String](["madera", "recurso basico", ""])
+stack_max = 20
 metadata/_custom_type_script = "uid://d0qc0amhaatfv"

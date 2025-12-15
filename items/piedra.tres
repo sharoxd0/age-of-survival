@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="ItemData" load_steps=3 format=3 uid="uid://njpgklk3as7w"]
+
+[ext_resource type="Script" uid="uid://d0qc0amhaatfv" path="res://items/ItemData.gd" id="1_57p0i"]
+[ext_resource type="Texture2D" uid="uid://b1r7bk446616m" path="res://assets/items/piedra_003.png" id="1_gbytp"]
+
+[resource]
+script = ExtResource("1_57p0i")
+id = "piedra"
+nombre = "Piedra"
+descripcion = "Una piedra suelta. Útil para fabricar herramientas simples."
+icono = ExtResource("1_gbytp")
+categorias = Array[String](["piedra", "recurso basico"])
+stack_max = 20
+metadata/_custom_type_script = "uid://d0qc0amhaatfv"

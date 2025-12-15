@@ -3,7 +3,7 @@ extends Node2D
 @export var world: Node2D
 
 # =========================================================
-# DEFINICIÓN DE RECURSOS (source|atlas)
+# DEFINICIÓN DE RECURSOS GRANDES (source_id | atlas)
 # =========================================================
 const RESOURCE_DEFS := {
 	"0|(0, 0)": {
@@ -15,13 +15,19 @@ const RESOURCE_DEFS := {
 	}
 }
 
+# =========================================================
+# DEFINICIÓN DE RECURSOS PEQUEÑOS (SOLO ATLAS)
+# =========================================================
+# ⚠️ IMPORTANTE:
+# Los recursos pequeños IGNORAN source_id porque
+# todos vienen del mismo TileSet simple
 const SMALL_RESOURCE_DEFS := {
-	"1|(0, 0)": {
+	"0": {
 		"nombre": "Rama",
 		"descripcion": "Una rama en el suelo.",
 		"item_id": "madera"
 	},
-	"2|(0, 0)": {
+	"1": {
 		"nombre": "Piedra pequeña",
 		"descripcion": "Una piedra suelta.",
 		"item_id": "piedra"
@@ -31,10 +37,11 @@ const SMALL_RESOURCE_DEFS := {
 # =========================================================
 # ESTADO DE RECURSOS GRANDES
 # =========================================================
+# cell -> cantidad restante
 var resource_amounts: Dictionary[Vector2i, int] = {}
 
 # =========================================================
-# INIT
+# INIT RECURSOS GRANDES
 # =========================================================
 func init_resources(resources_tilemap: TileMapLayer) -> void:
 	resource_amounts.clear()
@@ -47,21 +54,29 @@ func init_resources(resources_tilemap: TileMapLayer) -> void:
 		var def: Dictionary = RESOURCE_DEFS.get(key, {})
 		resource_amounts[cell] = int(def.get("amount", 1))
 
-		print("[RESOURCES] init cell:", cell, "key:", key, "amount:", resource_amounts[cell])
+		print(
+			"[RESOURCES] init cell:",
+			cell,
+			"key:",
+			key,
+			"amount:",
+			resource_amounts[cell]
+		)
 
 # =========================================================
-# DEFINICIONES
+# DEFINICIONES (BIG)
 # =========================================================
 func get_big_def(source_id: int, atlas: Vector2i) -> Dictionary:
 	var key := "%d|%s" % [source_id, atlas]
 	return RESOURCE_DEFS.get(key, {})
 
-func get_small_def(source_id: int, atlas: Vector2i) -> Dictionary:
-	var key := "%d|%s" % [source_id, atlas]
-	return SMALL_RESOURCE_DEFS.get(key, {})
-
 # =========================================================
-# CONSUMO DE RECURSOS
+# DEFINICIONES (SMALL)  ← 🔥 FIX CLAVE
+# =========================================================
+func get_small_def(source_id: int, _atlas: Vector2i) -> Dictionary:
+	return SMALL_RESOURCE_DEFS.get(str(source_id), {})
+# =========================================================
+# CONSUMO DE RECURSOS GRANDES
 # =========================================================
 func has_resource(cell: Vector2i) -> bool:
 	return resource_amounts.has(cell)
@@ -90,7 +105,9 @@ func find_nearest_big_resource(
 		if tilemap.get_cell_source_id(cell) == -1:
 			continue
 
-		var world_pos := tilemap.map_to_local(cell)
+		var world_pos := tilemap.to_global(
+			tilemap.map_to_local(cell)
+		)
 		var d := from_pos.distance_to(world_pos)
 
 		if d < best_dist:
@@ -98,6 +115,7 @@ func find_nearest_big_resource(
 			best_cell = cell
 
 	return best_cell
+
 # =========================================================
 # POSICIÓN ÓPTIMA PARA TALAR (EDGE)
 # =========================================================
@@ -106,6 +124,7 @@ func get_best_edge_target_for_cell(
 	cell: Vector2i,
 	tilemap: TileMapLayer
 ) -> Vector2:
+
 	var world_pos: Vector2 = tilemap.to_global(
 		tilemap.map_to_local(cell)
 	)
@@ -138,7 +157,7 @@ func get_item_data(item_id: String) -> ItemData:
 	return load(path) as ItemData
 
 # =========================================================
-# PANEL DE RECURSO (UI)
+# PANEL DE RECURSO (UI) — SOLO BIG
 # =========================================================
 func update_resource_panel(
 	panel: Panel,
@@ -152,6 +171,7 @@ func update_resource_panel(
 	pressed_source_id: int,
 	pressed_atlas: Vector2i
 ) -> void:
+
 	var def: Dictionary = get_big_def(pressed_source_id, pressed_atlas)
 	if def.is_empty():
 		panel.visible = false

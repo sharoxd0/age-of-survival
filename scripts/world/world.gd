@@ -3,22 +3,30 @@ extends Node2D
 # =========================================================
 # SUBSISTEMAS
 # =========================================================
-@onready var world_input      := $WorldInput
-@onready var world_resources  := $WorldResources
-@onready var world_workers    := $WorldWorkers
-
+@onready var world_input      = $WorldInput
+@onready var world_resources  = $WorldResources
+@onready var world_workers    = $WorldWorkers
+@export var slot_scene: PackedScene
 # =========================================================
 # NODOS DEL MUNDO
 # =========================================================
-@onready var resources: TileMapLayer = $Resources_TileMapLayer
+@onready var resources: TileMapLayer       = $Resources_TileMapLayer
 @onready var resources_small: TileMapLayer = $SmallResources_TileMapLayer
-@onready var ground: TileMapLayer = $Ground_TileMapLayer
+@onready var ground: TileMapLayer          = $Ground_TileMapLayer
+
+# =========================================================
+# INVENTARIO (ÚNICA FUENTE DE VERDAD)
+# =========================================================
+@onready var inventory_manager: InventoryManager = $InventoryManager
+@onready var panel_inventory = $UI/PanelInventario
+@onready var crafting_manager: = $CraftingManager
+@onready var recipe_hacha := preload("res://data/recipes/recipe_hacha.tres")
+
 
 # =========================================================
 # UI
 # =========================================================
 @onready var btn_inv: Button = $UI/VBoxContainer/Button2
-@onready var panel_inv: Panel = $UI/PanelInventario
 
 @onready var panel_resource: Panel = $UI/PanelRecurso
 @onready var label_res_name: Label = $UI/PanelRecurso/LabelNombre
@@ -29,11 +37,8 @@ extends Node2D
 
 @onready var btn_spawn_worker: Button = $UI/VBoxContainer/ButtonSpawnWorker
 @onready var panel_worker: Panel = $UI/PanelWorker
-
-# =========================================================
-# INVENTARIO GLOBAL
-# =========================================================
-var inventory: Dictionary[String, int] = {}
+@onready var btn_craft: Button = $UI/VBoxContainer/ButtonCraft
+@onready var panel_crafting: PanelCrafting = $UI/PanelCrafting
 
 # =========================================================
 # INPUT STATE (solo datos compartidos)
@@ -48,7 +53,7 @@ var pressed_on_resource := false
 var pressed_is_small := false
 var pressed_cell := Vector2i(-1, -1)
 var pressed_source_id := -1
-var pressed_atlas: Vector2i = Vector2i.ZERO
+var pressed_atlas := Vector2i.ZERO
 var long_press_fired := false
 
 @onready var long_press_timer: Timer = Timer.new()
@@ -57,45 +62,63 @@ var long_press_fired := false
 # READY
 # =========================================================
 func _ready() -> void:
-	# Inyectar referencias
+	# -----------------------------
+	# Inyección de referencias
+	# -----------------------------
 	world_input.world = self
 	world_resources.world = self
 	world_workers.world = self
-	panel_worker.world = self
 	world_workers.resources_manager = world_resources
+	crafting_manager.inventory = inventory_manager
+	panel_worker.world = self
 
+	# 🔥 CLAVE: conectar inventario global
+	panel_inventory.set_inventory_manager(inventory_manager)
+	
+	crafting_manager.register_recipe(recipe_hacha)
+
+	# -----------------------------
 	# UI inicial
-	panel_inv.visible = false
+	# -----------------------------
+	panel_inventory.visible = false
 	panel_resource.visible = false
 	panel_worker.visible = false
 
+	# -----------------------------
+	# Conexiones UI
+	# -----------------------------
 	btn_inv.pressed.connect(_on_btn_inv_pressed)
 	btn_collect.pressed.connect(_on_collect_pressed)
 	btn_spawn_worker.pressed.connect(_on_spawn_worker_pressed)
+	btn_craft.pressed.connect(_on_btn_craft_pressed)
 
-	# Inicializar recursos GRANDES → AHORA LO HACE world_resources
+	# -----------------------------
+	# Inicializar recursos grandes
+	# -----------------------------
 	world_resources.init_resources(resources)
 
-	# Worker inicial
+	# -----------------------------
+	# Worker inicial (si existe)
+	# -----------------------------
 	if has_node("Worker"):
 		world_workers.register_worker($Worker)
 
-	# Timer long press → pertenece a input
+	# -----------------------------
+	# Timer de long press (input)
+	# -----------------------------
 	add_child(long_press_timer)
 	long_press_timer.one_shot = true
 	long_press_timer.wait_time = LONG_PRESS_TIME
 	long_press_timer.timeout.connect(world_input._on_long_press_timeout)
-
 # =========================================================
 # UI CALLBACKS
 # =========================================================
 func _on_btn_inv_pressed() -> void:
-	panel_inv.visible = not panel_inv.visible
-	if panel_inv.visible:
-		panel_inv.set_inventory(inventory)
+	panel_inventory.visible = not panel_inventory.visible
+	if panel_inventory.visible:
+		panel_crafting.visible = false
 
 func _on_collect_pressed() -> void:
-	print("[UI] Botón recolectar")
 	world_workers.try_collect_with_active_worker()
 
 func _on_spawn_worker_pressed() -> void:
@@ -104,6 +127,13 @@ func _on_spawn_worker_pressed() -> void:
 	add_child(w)
 	world_workers.register_worker(w)
 
-# world.gd
+# =========================================================
+# API PÚBLICA
+# =========================================================
 func select_worker(w: CharacterBody2D) -> void:
 	world_workers.select_worker(w)
+	
+func _on_btn_craft_pressed() -> void:
+	panel_crafting.visible = not panel_crafting.visible
+	if panel_crafting.visible:
+		panel_inventory.visible = false

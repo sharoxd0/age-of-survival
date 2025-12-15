@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="RecipeData" load_steps=3 format=3 uid="uid://ccl1xdhsuomps"]
+
+[ext_resource type="Script" uid="uid://c6yk5bph41vsj" path="res://data/repice_data.gd" id="1_gstk0"]
+[ext_resource type="Texture2D" uid="uid://c8k4csl8d4pud" path="res://assets/items/axe_001.png" id="1_ktg6m"]
+
+[resource]
+script = ExtResource("1_gstk0")
+id = "hacha_basica"
+nombre = "Hacha basica"
+icono = ExtResource("1_ktg6m")
+ingredientes = Dictionary[String, int]({
+"madera": 3,
+"piedra": 1
+})
+tiempo_craft = 3.0
+resultado_id = "hacha"
+metadata/_custom_type_script = "uid://c6yk5bph41vsj"

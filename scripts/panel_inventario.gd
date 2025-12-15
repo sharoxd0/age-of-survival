@@ -1,62 +1,104 @@
 extends Panel
 
-@onready var grid: GridContainer = $MarginContainer/Grid
+# =========================================================
+# CONFIGURACIÓN
+# =========================================================
+@export var total_slots: int = 30          # capacidad inicial
+@export var columns: int = 6               # columnas del grid
+@export var slot_scene: PackedScene        # InventorySlot.tscn
 
-var inventory: Dictionary = {}
+# =========================================================
+# NODOS
+# =========================================================
+@onready var grid: GridContainer = $CenterContainer/VBoxContainer/MarginContainer/Grid
 
-func set_inventory(inv: Dictionary) -> void:
-	inventory = inv
-	_update_ui()
+# =========================================================
+# ESTADO
+# =========================================================
+var inventory_manager: InventoryManager
+var slots: Array[InventorySlot] = []
 
+# =========================================================
+# READY
+# =========================================================
+func _ready() -> void:
+	print("=== PANEL INVENTARIO READY ===")
 
-func _update_ui():
-	print(">>> DEBUG INVENTARIO <<<")
+	if slot_scene == null:
+		push_error("❌ slot_scene NO asignado (InventorySlot.tscn)")
+		return
 
+	if grid == null:
+		push_error("❌ GridContainer NO encontrado")
+		return
+
+	grid.columns = columns
+	_create_slots()
+
+	print("Slots creados:", slots.size())
+	print("=== FIN PANEL INVENTARIO ===")
+
+# =========================================================
+# CONECTAR INVENTARIO
+# =========================================================
+func set_inventory_manager(im: InventoryManager) -> void:
+	inventory_manager = im
+
+	if inventory_manager.inventory_changed.is_connected(_on_inventory_changed):
+		inventory_manager.inventory_changed.disconnect(_on_inventory_changed)
+
+	inventory_manager.inventory_changed.connect(_on_inventory_changed)
+	_refresh()
+
+# =========================================================
+# CREAR SLOTS
+# =========================================================
+func _create_slots() -> void:
+	print("=== _create_slots() ===")
+
+	# limpiar grid
 	for c in grid.get_children():
 		c.queue_free()
 
-	var slot_style := preload("res://ui/slot_style.tres")
+	slots.clear()
 
-	for id in inventory.keys():
-		var value = inventory[id]
+	for i in range(total_slots):
+		var slot := slot_scene.instantiate() as InventorySlot
+		grid.add_child(slot)
+		slots.append(slot)
 
-		var item_data: ItemData
+		print("Slot añadido:", i, "->", slot)
 
-		if typeof(value) == TYPE_INT:
-			item_data = load("res://items/%s.tres" % id)
-		else:
-			item_data = value
+	print("=== FIN _create_slots() ===")
 
-		# ====== CREAR CELDA (PANEL) ======
-		var cell := Panel.new()
-		cell.custom_minimum_size = Vector2(100, 100)
+# =========================================================
+# ACTUALIZAR UI
+# =========================================================
+func _refresh() -> void:
+	if inventory_manager == null:
+		return
 
-		# ✔ CORRECTO PARA GODOT 4:
-		cell.add_theme_stylebox_override("panel", slot_style)
+	var items: Dictionary = inventory_manager.get_all()
 
-		# Contenedor interno
-		var box := VBoxContainer.new()
-		box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		box.size_flags_vertical = Control.SIZE_EXPAND_FILL
-		box.alignment = BoxContainer.ALIGNMENT_CENTER
-		cell.add_child(box)
+	# limpiar slots
+	for s in slots:
+		s.clear()
 
-		# Icono
-		var icon := TextureRect.new()
-		icon.texture = item_data.icono
-		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		icon.custom_minimum_size = Vector2(48, 48)
-		box.add_child(icon)
+	var index := 0
+	for id in items.keys():
+		if index >= slots.size():
+			break
 
-		# Texto
-		var label := Label.new()
+		var item: ItemData = load("res://items/%s.tres" % id)
+		if item == null:
+			continue
 
-		if typeof(value) == TYPE_INT:
-			label.text = "%s x%d" % [item_data.nombre, value]
-		else:
-			label.text = item_data.nombre
+		slots[index].set_item(item, items[id])
+		index += 1
 
-		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		box.add_child(label)
-
-		grid.add_child(cell)
+# =========================================================
+# CALLBACK INVENTARIO
+# =========================================================
+func _on_inventory_changed(item_id: String, new_amount: int) -> void:
+	print("[INVENTARIO] cambiado:", item_id, "->", new_amount)
+	_refresh()

@@ -7,7 +7,12 @@ extends Node2D
 # WORKERS
 # =========================================================
 var active_worker: CharacterBody2D = null
-
+enum TaskMode {
+	NONE,
+	MANUAL,
+	AUTO_BIG_RESOURCE
+}
+var worker_task_mode: Dictionary[CharacterBody2D, int] = {}
 var worker_task_is_small: Dictionary = {}
 var worker_active_cell: Dictionary = {}
 var worker_active_source: Dictionary = {}
@@ -75,28 +80,38 @@ func _on_worker_arrived(w: CharacterBody2D, cell: Vector2i) -> void:
 # SMALL RESOURCE
 # =========================================================
 func _handle_small_resource(w: CharacterBody2D, cell: Vector2i) -> void:
-	var def: Dictionary = resources_manager.get_small_def(
-		worker_active_source[w],
-		worker_active_atlas[w]
+	# 🔑 leer SIEMPRE desde el TileMap
+	var src_id: int = world.resources_small.get_cell_source_id(cell)
+	var atlas_coords: Vector2i = world.resources_small.get_cell_atlas_coords(cell)
+
+	print(
+		"[DEBUG SMALL]",
+		"cell:", cell,
+		"source:", src_id,
+		"atlas:", atlas_coords
 	)
-	if def.is_empty():
+
+	var small_def: Dictionary = resources_manager.get_small_def(src_id, atlas_coords)
+	if small_def.is_empty():
+		print("[WORKERS] ❌ small def vacío para", src_id, atlas_coords)
 		return
 
-	var item: ItemData = resources_manager.get_item_data(def["item_id"])
-	if item == null:
+	var item_data: ItemData = resources_manager.get_item_data(small_def["item_id"])
+	if item_data == null:
 		return
 
+	# cargar ítem
 	w.cargo.clear()
-	w.cargo.append(item)
+	w.cargo.append(item_data)
 	w.emit_signal("cargo_changed")
 
+	# eliminar tile del mapa
 	world.resources_small.set_cell(cell, -1)
 
-	print("[WORKERS] ✔ small recolectado")
+	print("[WORKERS] ✔ small recolectado:", item_data.id)
 
-	w.go_home()
-
-# =========================================================
+	# volver a casa
+	w.go_home()# =========================================================
 # BIG RESOURCE
 # =========================================================
 func _handle_big_resource(w: CharacterBody2D, cell: Vector2i) -> void:
@@ -145,38 +160,79 @@ func _on_worker_arrived_home(w: CharacterBody2D) -> void:
 
 	print("[WORKERS] arrived_home")
 
-	# depositar inventario
-	for item: ItemData in w.cargo:
-		world.inventory[item.id] = world.inventory.get(item.id, 0) + 1
+	# =====================================
+	# 1️⃣ DEPOSITAR CARGO EN INVENTARIO GLOBAL
+	# =====================================
+	if not w.cargo.is_empty():
+		for item: ItemData in w.cargo:
+			world.inventory_manager.add(item.id, 1)
+			print("[WORKERS] 📦 depositado:", item.id)
 
-	w.cargo.clear()
-	w.emit_signal("cargo_changed")
+		w.cargo.clear()
+		w.emit_signal("cargo_changed")
 
-	# buscar siguiente recurso
+	# =====================================
+	# 2️⃣ MODO MANUAL → DETENER TODO
+	# =====================================
+	if worker_task_mode.get(w, TaskMode.MANUAL) == TaskMode.MANUAL:
+		print("[WORKERS] modo manual → detener")
+
+		worker_active_cell[w] = Vector2i(-1, -1)
+		worker_active_source[w] = -1
+		worker_active_atlas[w] = Vector2i.ZERO
+		worker_task_is_small[w] = false
+
+		return  # ⛔ NO continuar automático
+
+	# =====================================
+	# 3️⃣ SOLO AUTO_BIG_RESOURCE CONTINÚA
+	# =====================================
+	if worker_task_mode.get(w) != TaskMode.AUTO_BIG_RESOURCE:
+		print("[WORKERS] modo no-auto → detener")
+		return
+
+	# =====================================
+	# 4️⃣ BUSCAR SIGUIENTE ÁRBOL
+	# =====================================
 	var cell: Vector2i = resources_manager.find_nearest_big_resource(
 		w.global_position,
 		world.resources
 	)
 
 	if cell == Vector2i(-1, -1):
-		print("[WORKERS] 🧍 no hay más recursos → idle")
+		print("[WORKERS] 🌲 no hay más recursos")
 		return
 
 	var src: int = world.resources.get_cell_source_id(cell)
 	if src == -1:
-		print("[WORKERS] ❌ tile inválido, reintentando")
-		_on_worker_arrived_home(w)
+		print("[WORKERS] ❌ tile inválido")
 		return
 
 	var atlas: Vector2i = world.resources.get_cell_atlas_coords(cell)
+	var def: Dictionary = resources_manager.get_big_def(src, atlas)
+
+	if def.is_empty():
+		print("[WORKERS] ❌ definición inválida")
+		return
+
+	# =====================================
+	# 5️⃣ VALIDAR HERRAMIENTA
+	# =====================================
+	var req: String = String(def.get("tool_required", ""))
+	if req != "" and not w.has_tool(req):
+		print("[WORKERS] ⛔ auto cancelado → falta herramienta:", req)
+		return
+
+	# =====================================
+	# 6️⃣ ORDENAR SIGUIENTE RECOLECCIÓN
+	# =====================================
+	print("[WORKERS] 🌲 nuevo recurso:", cell)
 
 	var target: Vector2 = resources_manager.get_best_edge_target_for_cell(
 		w,
 		cell,
 		world.resources
 	)
-
-	print("[WORKERS] 🌲 nuevo recurso:", cell)
 
 	order_collect(
 		w,
@@ -185,10 +241,7 @@ func _on_worker_arrived_home(w: CharacterBody2D) -> void:
 		atlas,
 		false,
 		target
-	)
-
-# =========================================================
-# SELECCIÓN DE WORKER
+	)# SELECCIÓN DE WORKER
 # =========================================================
 func select_worker(w: CharacterBody2D) -> void:
 	if not is_instance_valid(w):
@@ -225,14 +278,24 @@ func try_collect_with_active_worker() -> void:
 	var atlas: Vector2i = world.pressed_atlas
 	var is_small: bool = world.pressed_is_small
 
+	# Validación básica
+	if cell == Vector2i(-1, -1) or src == -1:
+		return
+
 	print("[WORKERS] try_collect → cell:", cell, "small:", is_small)
 
-	# SMALL
+	# =================================================
+	# 🌿 SMALL RESOURCE → MANUAL PURO (NO AUTO)
+	# =================================================
 	if is_small:
 		var def_s: Dictionary = resources_manager.get_small_def(src, atlas)
 		if def_s.is_empty():
 			return
 
+		# 🔒 FORZAR MODO MANUAL
+		worker_task_mode[w] = TaskMode.MANUAL
+
+		# 🔥 LIMPIAR CUALQUIER CONTEXTO AUTO PREVIO
 		worker_task_is_small[w] = true
 		worker_active_cell[w] = cell
 		worker_active_source[w] = src
@@ -245,15 +308,20 @@ func try_collect_with_active_worker() -> void:
 		w.move_to_edge(target, cell)
 		return
 
-	# BIG
+	# =================================================
+	# 🌲 BIG RESOURCE → AUTO SOLO CON HERRAMIENTA
+	# =================================================
 	var def: Dictionary = resources_manager.get_big_def(src, atlas)
 	if def.is_empty():
 		return
 
 	var req: String = String(def.get("tool_required", ""))
 	if req != "" and not w.has_tool(req):
+		print("[WORKERS] ❌ falta herramienta:", req)
 		return
 
+	# ✅ AUTO PERMITIDO
+	worker_task_mode[w] = TaskMode.AUTO_BIG_RESOURCE
 	worker_task_is_small[w] = false
 	worker_active_cell[w] = cell
 	worker_active_source[w] = src
@@ -266,8 +334,9 @@ func try_collect_with_active_worker() -> void:
 	)
 
 	w.move_to_edge(target_big, cell)
+
+	# UI
 	world.panel_resource.visible = false
-	
 func deselect_worker() -> void:
 	if active_worker != null and is_instance_valid(active_worker):
 		active_worker.set_selected(false)
@@ -279,3 +348,48 @@ func deselect_worker() -> void:
 		world.panel_worker.visible = false
 
 	print("[WORKERS] Worker deseleccionado")
+
+func _search_next_big_resource(w: CharacterBody2D) -> void:
+	if not is_instance_valid(w):
+		return
+
+	var cell: Vector2i = resources_manager.find_nearest_big_resource(
+		w.global_position,
+		world.resources
+	)
+
+	if cell == Vector2i(-1, -1):
+		print("[WORKERS] 🧍 no hay más recursos → idle")
+		return
+
+	var src: int = world.resources.get_cell_source_id(cell)
+	if src == -1:
+		print("[WORKERS] ❌ tile inválido → abortar auto")
+		return
+
+	var atlas: Vector2i = world.resources.get_cell_atlas_coords(cell)
+	var def: Dictionary = resources_manager.get_big_def(src, atlas)
+	if def.is_empty():
+		print("[WORKERS] ❌ definición inválida → abortar auto")
+		return
+
+	# 🔒 VALIDAR HERRAMIENTA OBLIGATORIA
+	var req: String = String(def.get("tool_required", ""))
+	if req != "" and not w.has_tool(req):
+		print("[WORKERS] ⛔ auto cancelado → falta herramienta:", req)
+		return
+
+	# ✅ ordenar nueva recolección
+	worker_task_is_small[w] = false
+	worker_active_cell[w] = cell
+	worker_active_source[w] = src
+	worker_active_atlas[w] = atlas
+
+	var target: Vector2 = resources_manager.get_best_edge_target_for_cell(
+		w,
+		cell,
+		world.resources
+	)
+
+	print("[WORKERS] 🌲 auto → nuevo recurso:", cell)
+	w.move_to_edge(target, cell)

@@ -1,0 +1,18 @@
+[gd_resource type="TileSet" load_steps=5 format=3 uid="uid://ds64yairbdubl"]
+
+[ext_resource type="Texture2D" uid="uid://by4sxxq8346it" path="res://assets/items/madera_002.png" id="1_sxu5w"]
+[ext_resource type="Texture2D" uid="uid://b1r7bk446616m" path="res://assets/items/piedra_003.png" id="2_hafgc"]
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_40f70"]
+texture = ExtResource("1_sxu5w")
+0:0/0 = 0
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_f8umr"]
+texture = ExtResource("2_hafgc")
+0:0/0 = 0
+
+[resource]
+tile_shape = 1
+tile_size = Vector2i(16, 8)
+sources/0 = SubResource("TileSetAtlasSource_40f70")
+sources/1 = SubResource("TileSetAtlasSource_f8umr")

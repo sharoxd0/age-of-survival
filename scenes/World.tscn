@@ -1,16 +1,20 @@
-[gd_scene load_steps=20 format=4 uid="uid://cfbf6ujfnqilr"]
+[gd_scene load_steps=22 format=4 uid="uid://cfbf6ujfnqilr"]
 
 [ext_resource type="Script" uid="uid://dcjimi0hyr4dq" path="res://scripts/world/world.gd" id="1_7g83o"]
 [ext_resource type="Texture2D" uid="uid://lkrqeohoo0gd" path="res://assets/piedra_001.png" id="1_kqs1s"]
 [ext_resource type="PackedScene" uid="uid://c3drk3y821x0e" path="res://scenes/Worker.tscn" id="2_32lhk"]
 [ext_resource type="Script" uid="uid://c7c7u2jlkh1hu" path="res://scripts/ground_tile_map_layer.gd" id="3_d1c63"]
 [ext_resource type="Texture2D" uid="uid://c1lubwehyefb3" path="res://assets/arbol_001.png" id="4_1lgw5"]
-[ext_resource type="Texture2D" uid="uid://by4sxxq8346it" path="res://assets/items/madera_002.png" id="5_b3faq"]
+[ext_resource type="Script" uid="uid://bsuirh53vvfix" path="res://scripts/world/inventory_manager.gd" id="5_7c4bj"]
+[ext_resource type="Script" uid="uid://bcg4dwlu3wwpy" path="res://scripts/crafting/crafting_manager.gd" id="6_c0d7e"]
 [ext_resource type="Script" uid="uid://dytlpp6bre7tm" path="res://scripts/panel_inventario.gd" id="6_hlk0d"]
 [ext_resource type="PackedScene" uid="uid://bo0wlgr0tedhw" path="res://scenes/PanelWorker.tscn" id="7_0uv0p"]
+[ext_resource type="TileSet" uid="uid://ds64yairbdubl" path="res://tileset/resources_small_tileset.tres" id="9_7c4bj"]
 [ext_resource type="Script" uid="uid://rgvwe1cqntl1" path="res://scripts/world/world_input.gd" id="9_ygioq"]
 [ext_resource type="Script" uid="uid://ctrqt2w0pjcpj" path="res://scripts/world/world_resources.gd" id="10_pdh0q"]
 [ext_resource type="Script" uid="uid://cquv57jjs8vgr" path="res://scripts/world/world_workers.gd" id="11_h1bdy"]
+[ext_resource type="PackedScene" uid="uid://dkhavg3m4ily6" path="res://UI/InventorySlot.tscn" id="12_nrtoj"]
+[ext_resource type="Script" uid="uid://v3iugl1fok7s" path="res://UI/panel_crafting.gd" id="14_i4b1j"]
 
 [sub_resource type="NavigationPolygon" id="NavigationPolygon_32lhk"]
 vertices = PackedVector2Array(32, -16, 0, 0, -32, -16, 0, -32)
@@ -46,18 +50,17 @@ tile_size = Vector2i(64, 32)
 physics_layer_0/collision_layer = 1
 sources/0 = SubResource("TileSetAtlasSource_hlk0d")
 
-[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_ygioq"]
-texture = ExtResource("5_b3faq")
-0:0/0 = 0
-
-[sub_resource type="TileSet" id="TileSet_pdh0q"]
-tile_shape = 1
-tile_layout = 5
-tile_size = Vector2i(16, 8)
-sources/1 = SubResource("TileSetAtlasSource_ygioq")
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hlk0d"]
-bg_color = Color(0.27784097, 0.11546315, 0.030259836, 1)
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_nrtoj"]
+bg_color = Color(0.18039216, 0.19607843, 0.21960784, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.41960785, 0.4627451, 0.5176471, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
 
 [node name="World" type="Node2D"]
 script = ExtResource("1_7g83o")
@@ -71,6 +74,13 @@ script = ExtResource("10_pdh0q")
 [node name="WorldWorkers" type="Node2D" parent="."]
 script = ExtResource("11_h1bdy")
 
+[node name="InventoryManager" type="Node2D" parent="."]
+script = ExtResource("5_7c4bj")
+
+[node name="CraftingManager" type="Node" parent="."]
+script = ExtResource("6_c0d7e")
+metadata/_custom_type_script = "uid://bcg4dwlu3wwpy"
+
 [node name="Ground_TileMapLayer" type="TileMapLayer" parent="."]
 tile_map_data = PackedByteArray("AAD6/wIAAAAAAAAAAAD6/wMAAAAAAAAAAAD6/wQAAAAAAAAAAAD6/wUAAAAAAAAAAAD7//3/AAAAAAAAAAD7//7/AAAAAAAAAAD7////AAAAAAAAAAD7/wAAAAAAAAAAAAD7/wMAAAAAAAAAAAD7/wQAAAAAAAAAAAD7/wUAAAAAAAAAAAD8//3/AAAAAAAAAAD8//7/AAAAAAAAAAD8////AAAAAAAAAAD8/wAAAAAAAAAAAAD8/wEAAAAAAAAAAAD8/wIAAAAAAAAAAAD8/wMAAAAAAAAAAAD8/wQAAAAAAAAAAAD8/wUAAAAAAAAAAAD9//3/AAAAAAAAAAD9//7/AAAAAAAAAAD9////AAAAAAAAAAD9/wAAAAAAAAAAAAD9/wEAAAAAAAAAAAD9/wIAAAAAAAAAAAD9/wMAAAAAAAAAAAD9/wQAAAAAAAAAAAD9/wUAAAAAAAAAAAD+//3/AAAAAAAAAAD+//7/AAAAAAAAAAD+////AAAAAAAAAAD+/wAAAAAAAAAAAAD+/wEAAAAAAAAAAAD+/wIAAAAAAAAAAAD+/wMAAAAAAAAAAAD+/wQAAAAAAAAAAAD+/wUAAAAAAAAAAAD///3/AAAAAAAAAAD///7/AAAAAAAAAAD/////AAAAAAAAAAD//wAAAAAAAAAAAAD//wEAAAAAAAAAAAD//wIAAAAAAAAAAAD//wMAAAAAAAAAAAD//wQAAAAAAAAAAAD//wUAAAAAAAAAAAAAAP3/AAAAAAAAAAAAAP7/AAAAAAAAAAAAAP//AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAIAAAAAAAAAAAAAAAMAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAUAAAAAAAAAAAABAP3/AAAAAAAAAAABAP7/AAAAAAAAAAABAP//AAAAAAAAAAABAAAAAAAAAAAAAAABAAEAAAAAAAAAAAABAAIAAAAAAAAAAAABAAMAAAAAAAAAAAABAAQAAAAAAAAAAAABAAUAAAAAAAAAAAACAP3/AAAAAAAAAAACAP7/AAAAAAAAAAACAP//AAAAAAAAAAACAAAAAAAAAAAAAAACAAEAAAAAAAAAAAACAAIAAAAAAAAAAAACAAMAAAAAAAAAAAACAAQAAAAAAAAAAAACAAUAAAAAAAAAAAADAP3/AAAAAAAAAAADAP7/AAAAAAAAAAADAP//AAAAAAAAAAADAAAAAAAAAAAAAAADAAEAAAAAAAAAAAADAAIAAAAAAAAAAAADAAMAAAAAAAAAAAADAAQAAAAAAAAAAAADAAUAAAAAAAAAAAAEAP3/AAAAAAAAAAAEAP7/AAAAAAAAAAAEAP//AAAAAAAAAAAEAAAAAAAAAAAAAAAEAAEAAAAAAAAAAAAEAAIAAAAAAAAAAAAEAAMAAAAAAAAAAAAEAAQAAAAAAAAAAAAEAAUAAAAAAAAAAAAFAP3/AAAAAAAAAAAFAP7/AAAAAAAAAAAFAP//AAAAAAAAAAAFAAAAAAAAAAAAAAAFAAEAAAAAAAAAAAAFAAIAAAAAAAAAAAAFAAMAAAAAAAAAAAAFAAQAAAAAAAAAAAAFAAUAAAAAAAAAAAD6//3/AAAAAAAAAAD6//7/AAAAAAAAAAD6////AAAAAAAAAAD6/wAAAAAAAAAAAAD6/wEAAAAAAAAAAAD7/wEAAAAAAAAAAAD7/wIAAAAAAAAAAAA=")
 tile_set = SubResource("TileSet_d1c63")
@@ -81,8 +91,8 @@ tile_map_data = PackedByteArray("AAD8////AAAAAAAAAAD8/wAAAAAAAAAAAAD8/wEAAAAAAAA
 tile_set = SubResource("TileSet_0uv0p")
 
 [node name="SmallResources_TileMapLayer" type="TileMapLayer" parent="."]
-tile_map_data = PackedByteArray("AAD6////AQAAAAAAAAD6/wEAAQAAAAAAAAD5/wAAAQAAAAAAAAD5////AQAAAAAAAAD+//v/AQAAAAAAAAD///v/AQAAAAAAAAD+//r/AQAAAAAAAAA=")
-tile_set = SubResource("TileSet_pdh0q")
+tile_map_data = PackedByteArray("AAD9//f/AAAAAAAAAAD9//j/AAAAAAAAAAD9//n/AAAAAAAAAAD9//r/AAAAAAAAAAD8//v/AAAAAAAAAAACAPn/AAAAAAAAAAD8/xMAAAAAAAAAAAD9/xQAAAAAAAAAAAD7/xIAAAAAAAAAAAD7/xMAAAAAAAAAAAD///n/AAAAAAAAAAD8/wAAAQAAAAAAAAD8/wEAAQAAAAAAAAD8/wIAAQAAAAAAAAD8/wMAAQAAAAAAAAD8/wQAAQAAAAAAAAD8/wUAAQAAAAAAAAD9/wYAAQAAAAAAAAD//+j/AQAAAAAAAAD//+n/AQAAAAAAAAD//+r/AQAAAAAAAAD+/+v/AQAAAAAAAAD//+z/AQAAAAAAAAAJAPv/AQAAAAAAAAAKAP//AQAAAAAAAAA=")
+tile_set = ExtResource("9_7c4bj")
 
 [node name="Camera2D" type="Camera2D" parent="."]
 zoom = Vector2(2, 2)
@@ -117,28 +127,33 @@ text = "construir
 layout_mode = 2
 text = "Spawn Worker"
 
+[node name="ButtonCraft" type="Button" parent="UI/VBoxContainer"]
+layout_mode = 2
+text = "Crafteo"
+
 [node name="PanelInventario" type="Panel" parent="UI"]
-anchors_preset = -1
-anchor_left = 0.5
-anchor_right = 1.0
-anchor_bottom = 1.0
+custom_minimum_size = Vector2(360, 300)
+offset_right = 360.0
+offset_bottom = 300.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_nrtoj")
+script = ExtResource("6_hlk0d")
+slot_scene = ExtResource("12_nrtoj")
+
+[node name="CenterContainer" type="CenterContainer" parent="UI/PanelInventario"]
+layout_mode = 0
 offset_right = 40.0
 offset_bottom = 40.0
-theme_override_styles/panel = SubResource("StyleBoxFlat_hlk0d")
-script = ExtResource("6_hlk0d")
 
-[node name="MarginContainer" type="MarginContainer" parent="UI/PanelInventario"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-
-[node name="Grid" type="GridContainer" parent="UI/PanelInventario/MarginContainer"]
+[node name="VBoxContainer" type="VBoxContainer" parent="UI/PanelInventario/CenterContainer"]
 layout_mode = 2
-theme_override_constants/h_separation = 8
-theme_override_constants/v_separation = 8
+
+[node name="MarginContainer" type="MarginContainer" parent="UI/PanelInventario/CenterContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="Grid" type="GridContainer" parent="UI/PanelInventario/CenterContainer/VBoxContainer/MarginContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
 columns = 4
 
 [node name="PanelRecurso" type="Panel" parent="UI"]
@@ -183,5 +198,78 @@ offset_left = 2.0
 offset_top = 103.0
 offset_right = 2.0
 offset_bottom = 103.0
+
+[node name="PanelCrafting" type="Panel" parent="UI"]
+visible = false
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("14_i4b1j")
+
+[node name="MarginContainer" type="MarginContainer" parent="UI/PanelCrafting"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_bottom = 10
+
+[node name="HBoxContainer" type="HBoxContainer" parent="UI/PanelCrafting/MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Left" type="VBoxContainer" parent="UI/PanelCrafting/MarginContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="LabelTitle" type="Label" parent="UI/PanelCrafting/MarginContainer/HBoxContainer/Left"]
+layout_mode = 2
+text = "Planos"
+horizontal_alignment = 1
+
+[node name="ScrollRecipes" type="ScrollContainer" parent="UI/PanelCrafting/MarginContainer/HBoxContainer/Left"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="GridRecipes" type="GridContainer" parent="UI/PanelCrafting/MarginContainer/HBoxContainer/Left/ScrollRecipes"]
+layout_mode = 2
+theme_override_constants/h_separation = 8
+theme_override_constants/v_separation = 8
+columns = 4
+
+[node name="Right" type="VBoxContainer" parent="UI/PanelCrafting/MarginContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="LabelSelected" type="Label" parent="UI/PanelCrafting/MarginContainer/HBoxContainer/Right"]
+layout_mode = 2
+
+[node name="IconBig" type="TextureRect" parent="UI/PanelCrafting/MarginContainer/HBoxContainer/Right"]
+custom_minimum_size = Vector2(128, 128)
+layout_mode = 2
+stretch_mode = 5
+
+[node name="LabelDesc" type="Label" parent="UI/PanelCrafting/MarginContainer/HBoxContainer/Right"]
+layout_mode = 2
+
+[node name="VBoxIngredients" type="VBoxContainer" parent="UI/PanelCrafting/MarginContainer/HBoxContainer/Right"]
+layout_mode = 2
+
+[node name="BtnCraft" type="Button" parent="UI/PanelCrafting/MarginContainer/HBoxContainer/Right"]
+layout_mode = 2
+disabled = true
+text = "Crear
+"
+
+[node name="ButtonClose" type="Button" parent="UI/PanelCrafting/MarginContainer/HBoxContainer"]
+custom_minimum_size = Vector2(50, 0)
+layout_mode = 2
+text = "x
+"
 
 [connection signal="pressed" from="UI/PanelRecurso/BotonRecolectar" to="." method="_on_boton_recolectar_pressed"]
