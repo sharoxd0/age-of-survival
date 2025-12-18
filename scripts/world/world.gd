@@ -18,27 +18,23 @@ extends Node2D
 # INVENTARIO (ÚNICA FUENTE DE VERDAD)
 # =========================================================
 @onready var inventory_manager: InventoryManager = $InventoryManager
-@onready var panel_inventory = $UI/PanelInventario
+@onready var panel_inventory: Panel = $UI/PanelInventario
 @onready var panel_crafting: PanelCrafting = $UI/PanelCrafting
 
 # =========================================================
 # UI
 # =========================================================
 @onready var btn_inv: Button = $UI/VBoxContainer/Button2
-
-@onready var panel_resource: Panel = $UI/PanelRecurso
-@onready var label_res_name: Label = $UI/PanelRecurso/LabelNombre
-@onready var label_res_desc: Label = $UI/PanelRecurso/LabelDescripcion
-@onready var label_res_loot: Label = $UI/PanelRecurso/LabelLoot
-@onready var label_res_req: Label = $UI/PanelRecurso/LabelRequisito
-@onready var btn_collect: Button = $UI/PanelRecurso/BotonRecolectar
-
 @onready var btn_spawn_worker: Button = $UI/VBoxContainer/ButtonSpawnWorker
-@onready var panel_worker: Panel = $UI/PanelWorker
 @onready var btn_craft: Button = $UI/VBoxContainer/ButtonCraft
 
+@onready var panel_resource: Panel = $UI/PanelRecurso
+@onready var btn_collect: Button = $UI/PanelRecurso/BotonRecolectar
+
+@onready var panel_worker: Panel = $UI/PanelWorker
+
 # =========================================================
-# INPUT STATE (solo datos compartidos)
+# INPUT STATE (compartido)
 # =========================================================
 const TOUCH_RADIUS_PX := 20.0
 const LONG_PRESS_TIME := 0.35
@@ -59,37 +55,65 @@ var long_press_fired := false
 # READY
 # =========================================================
 func _ready() -> void:
+	# -----------------------------
 	# Inyección de referencias
+	# -----------------------------
 	world_input.world = self
 	world_resources.world = self
+
 	world_workers.world = self
 	world_workers.resources_manager = world_resources
+
 	panel_worker.world = self
 
-	# 🔥 Conectar inventario global a los paneles
+	# -----------------------------
+	# Conexión Worker → Crafting
+	# -----------------------------
+	world_workers.worker_selected.connect(
+		func(w): panel_crafting.set_active_worker(w)
+	)
+
+	# ⚠️ preparada, NO usada todavía
+	world_workers.worker_deselected.connect(
+		func(): panel_crafting.clear_active_worker()
+	)
+
+	# -----------------------------
+	# Inventario global
+	# -----------------------------
 	panel_inventory.set_inventory_manager(inventory_manager)
 	panel_crafting.inventory_manager = inventory_manager
 
+	# -----------------------------
 	# UI inicial
+	# -----------------------------
 	panel_inventory.visible = false
 	panel_resource.visible = false
 	panel_worker.visible = false
 	panel_crafting.visible = false
 
+	# -----------------------------
 	# Conexiones UI
+	# -----------------------------
 	btn_inv.pressed.connect(_on_btn_inv_pressed)
 	btn_collect.pressed.connect(_on_collect_pressed)
 	btn_spawn_worker.pressed.connect(_on_spawn_worker_pressed)
 	btn_craft.pressed.connect(_on_btn_craft_pressed)
 
-	# Inicializar recursos grandes
+	# -----------------------------
+	# Inicializar recursos
+	# -----------------------------
 	world_resources.init_resources(resources)
 
-	# Worker inicial (si existe)
+	# -----------------------------
+	# Worker inicial
+	# -----------------------------
 	if has_node("Worker"):
 		world_workers.register_worker($Worker)
 
+	# -----------------------------
 	# Timer long press
+	# -----------------------------
 	add_child(long_press_timer)
 	long_press_timer.one_shot = true
 	long_press_timer.wait_time = LONG_PRESS_TIME

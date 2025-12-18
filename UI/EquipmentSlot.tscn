@@ -1,0 +1,17 @@
+[gd_scene load_steps=2 format=3 uid="uid://b7c0m6aacgd3j"]
+
+[ext_resource type="Script" uid="uid://cwl44gbv0ce58" path="res://scripts/ui/equipment_slot.gd" id="1_gojgy"]
+
+[node name="EquipmentSlot" type="Panel"]
+custom_minimum_size = Vector2(64, 64)
+script = ExtResource("1_gojgy")
+
+[node name="Icon" type="TextureRect" parent="."]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="LabelSlot" type="Label" parent="."]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 23.0

@@ -80,22 +80,41 @@ func _refresh() -> void:
 
 	var items: Dictionary = inventory_manager.get_all()
 
+	# DEBUG: ver qué devuelve realmente
+	print("[INV UI] keys types:")
+	for k in items.keys():
+		print(" - key:", k, " type:", typeof(k), " class:", (k.get_class() if typeof(k) == TYPE_OBJECT and k != null else "n/a"))
+
 	# limpiar slots
 	for s in slots:
 		s.clear()
 
-	var index := 0
-	for id in items.keys():
+	var index: int = 0
+	for k in items.keys():
 		if index >= slots.size():
 			break
 
-		var item: ItemData = load("res://items/%s.tres" % id)
-		if item == null:
+		var amount: int = int(items[k])
+
+		var item_data: ItemData = null
+
+		# ✅ si ya es ItemData
+		if k is ItemData:
+			item_data = k
+		# ✅ si aún viene como String id (modo viejo)
+		elif typeof(k) == TYPE_STRING:
+			item_data = inventory_manager.get_item_data(String(k)) # <- añadimos esta función abajo
+		else:
+			print("[INV UI] ❌ key inválida:", k, " typeof:", typeof(k))
 			continue
 
-		slots[index].set_item(item, items[id])
-		index += 1
+		if item_data == null:
+			print("[INV UI] ❌ ItemData null para key:", k)
+			continue
 
+		slots[index].set_item(item_data, amount)
+		index += 1
+		
 # =========================================================
 # CALLBACK INVENTARIO
 # =========================================================

@@ -1,6 +1,13 @@
 extends CharacterBody2D
 
 # =========================================================
+# NODOS
+# =========================================================
+@onready var sprite: AnimatedSprite2D = $AnimatedSprite2D
+@onready var agent: NavigationAgent2D = $NavigationAgent2D
+@onready var selection_circle: Sprite2D = $SelectionCircle
+
+# =========================================================
 # SEÑALES
 # =========================================================
 signal arrived_to_resource(worker: CharacterBody2D, cell: Vector2i)
@@ -13,20 +20,21 @@ signal cargo_changed
 @export var speed: float = 45.0
 @export var reach_radius: float = 12.0
 
-@onready var agent: NavigationAgent2D = $NavigationAgent2D
-@onready var selection_circle: Sprite2D = $SelectionCircle
+# =========================================================
+# ORIENTACIÓN
+# =========================================================
+var last_dir: Vector2 = Vector2.DOWN
 
 # =========================================================
 # EQUIPAMIENTO
 # =========================================================
 var equipment: Dictionary = {
 	"hand": null,
-	"chest": null,
+	"body": null,
 	"off_hand": null,
 	"extra": null
 }
 
-# Cada ítem ocupa 1 slot
 var cargo: Array[ItemData] = []
 
 # =========================================================
@@ -54,62 +62,13 @@ const STUCK_MIN_MOVE := 1.0
 func _ready() -> void:
 	home_position = global_position
 	last_pos = global_position
+	sprite.play("idle_down")
 	print("[Worker READY] Home:", home_position)
-
-# =========================================================
-# EQUIPAMIENTO
-# =========================================================
-func equip_item(item: ItemData, preferred_slot := "") -> bool:
-	if item == null:
-		return false
-
-	var slot := preferred_slot
-	if slot == "":
-		match item.slot_kind:
-			"hand": slot = "hand"
-			"chest": slot = "chest"
-			"off_hand": slot = "off_hand"
-			"extra": slot = "extra"
-			_: return false
-
-	# liberar off-hand si mano es 2H
-	if slot == "hand" and item.two_handed and equipment["off_hand"] != null:
-		equipment["off_hand"] = null
-
-	# bloquear off-hand si mano es 2H
-	if slot == "off_hand" and equipment["hand"] != null and equipment["hand"].two_handed:
-		return false
-
-	equipment[slot] = item
-	emit_signal("cargo_changed")
-
-	print("Worker EQUIP:", item.nombre, "en", slot)
-	return true
-
-func has_tool(tool_id: String) -> bool:
-	for slot in ["hand", "off_hand"]:
-		var it: ItemData = equipment.get(slot, null)
-		if it != null and it.id == tool_id:
-			return true
-	return false
-
-# =========================================================
-# CARGO
-# =========================================================
-func get_cargo_slots() -> int:
-	return 1
-
-func is_cargo_full() -> bool:
-	return cargo.size() >= get_cargo_slots()
 
 # =========================================================
 # ÓRDENES DE MOVIMIENTO
 # =========================================================
 func move_to_edge(pos: Vector2, cell: Vector2i) -> void:
-	print("\n[WORKER DEBUG] move_to_edge")
-	print("  target:", pos)
-	print("  cell:", cell)
-
 	state = "harvesting"
 	current_target = pos
 	current_cell = cell
@@ -118,17 +77,15 @@ func move_to_edge(pos: Vector2, cell: Vector2i) -> void:
 	agent.target_position = pos
 	stuck_time = 0.0
 	last_pos = global_position
+
 func go_home() -> void:
 	state = "returning_home"
 	current_cell = Vector2i(-1, -1)
 	current_target = home_position
 
 	agent.target_position = home_position
-
 	stuck_time = 0.0
 	last_pos = global_position
-
-	print("[WORKER] → go_home")
 
 func move_to_position(pos: Vector2) -> void:
 	state = "moving"
@@ -136,11 +93,8 @@ func move_to_position(pos: Vector2) -> void:
 	current_target = pos
 
 	agent.target_position = pos
-
 	stuck_time = 0.0
 	last_pos = global_position
-
-	print("[WORKER] Move manual:", pos)
 
 # =========================================================
 # PHYSICS
@@ -160,12 +114,16 @@ func _physics_process(delta: float) -> void:
 		"moving":
 			_process_moving(delta)
 
+	# Guardar dirección real usada
+	if velocity.length() > 1.0:
+		last_dir = velocity.normalized()
+
+	_update_idle_animation()
+
 # =========================================================
-# PROCESOS
+# PROCESOS (USANDO NavigationAgent2D CORRECTAMENTE)
 # =========================================================
 func _process_harvesting(delta: float) -> void:
-	print("[WORKER DEBUG] harvesting pos:", global_position, "target:", current_target)
-
 	var moved := global_position.distance_to(last_pos)
 	if moved < STUCK_MIN_MOVE:
 		stuck_time += delta
@@ -174,28 +132,31 @@ func _process_harvesting(delta: float) -> void:
 		last_pos = global_position
 
 	if stuck_time > STUCK_THRESHOLD:
-		print("[WORKER DEBUG] UNSTUCK -> emit arrived")
-		stuck_time = 0.0
 		state = "idle"
+		stuck_time = 0.0
 		emit_signal("arrived_to_resource", self, current_cell)
 		return
 
 	var next := agent.get_next_path_position()
 	var dir := (next - global_position).normalized()
-	velocity = dir * speed
+
+	agent.set_velocity(dir * speed)
+	velocity = agent.get_velocity()
 
 	if global_position.distance_to(current_target) <= reach_radius:
-		print("[WORKER DEBUG] LLEGÓ -> emit arrived")
 		state = "idle"
 		stuck_time = 0.0
 		emit_signal("arrived_to_resource", self, current_cell)
 		return
 
 	move_and_slide()
+
 func _process_returning_home(delta: float) -> void:
 	var next := agent.get_next_path_position()
 	var dir := (next - global_position).normalized()
-	velocity = dir * speed
+
+	agent.set_velocity(dir * speed)
+	velocity = agent.get_velocity()
 
 	if global_position.distance_to(home_position) <= reach_radius \
 	or agent.is_navigation_finished():
@@ -209,7 +170,9 @@ func _process_returning_home(delta: float) -> void:
 func _process_moving(delta: float) -> void:
 	var next := agent.get_next_path_position()
 	var dir := (next - global_position).normalized()
-	velocity = dir * speed
+
+	agent.set_velocity(dir * speed)
+	velocity = agent.get_velocity()
 
 	if global_position.distance_to(current_target) <= reach_radius \
 	or agent.is_navigation_finished():
@@ -225,3 +188,39 @@ func _process_moving(delta: float) -> void:
 func set_selected(value: bool) -> void:
 	if selection_circle:
 		selection_circle.visible = value
+
+# =========================================================
+# ANIMACIÓN IDLE DIRECCIONAL
+# =========================================================
+func _update_idle_animation() -> void:
+	var dir := last_dir
+
+	if dir.y > 0.5:
+		if dir.x > 0.3:
+			sprite.play("idle_down_right")
+			sprite.flip_h = false
+		elif dir.x < -0.3:
+			sprite.play("idle_down_right")
+			sprite.flip_h = true
+		else:
+			sprite.play("idle_down")
+			sprite.flip_h = false
+
+	elif dir.y < -0.5:
+		if dir.x > 0.3:
+			sprite.play("idle_up_right")
+			sprite.flip_h = false
+		elif dir.x < -0.3:
+			sprite.play("idle_up_right")
+			sprite.flip_h = true
+		else:
+			sprite.play("idle_up")
+			sprite.flip_h = false
+
+	else:
+		if dir.x > 0:
+			sprite.play("idle_right")
+			sprite.flip_h = false
+		elif dir.x < 0:
+			sprite.play("idle_right")
+			sprite.flip_h = true
