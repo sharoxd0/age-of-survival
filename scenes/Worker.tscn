@@ -23,8 +23,6 @@
 [ext_resource type="Texture2D" uid="uid://dv1gj6chekkbo" path="res://assets/Hero/idle_up_right (3).png" id="21_83yje"]
 [ext_resource type="Texture2D" uid="uid://ceurevoftqyc0" path="res://assets/Hero/idle_up_right (4).png" id="22_qhmba"]
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_hh3kl"]
-
 [sub_resource type="SpriteFrames" id="SpriteFrames_0xvuf"]
 animations = [{
 "frames": [],
@@ -118,13 +116,12 @@ animations = [{
 "speed": 6.0
 }]
 
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_8fien"]
+size = Vector2(45, 49)
+
 [node name="Worker" type="CharacterBody2D" groups=["workers"]]
 collision_layer = 2
 script = ExtResource("1_rnx45")
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
-position = Vector2(1, 15)
-shape = SubResource("RectangleShape2D_hh3kl")
 
 [node name="NavigationAgent2D" type="NavigationAgent2D" parent="."]
 path_max_distance = 2000.0
@@ -143,3 +140,7 @@ texture = ExtResource("3_ujfku")
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
 sprite_frames = SubResource("SpriteFrames_0xvuf")
 animation = &"idle_up_right"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(2.5, -0.5)
+shape = SubResource("RectangleShape2D_8fien")

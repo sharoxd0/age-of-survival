@@ -1,6 +1,10 @@
 extends Panel
 class_name PanelCrafting
 
+
+signal panel_opened
+signal panel_closed
+
 # =========================================================
 # TABS
 # =========================================================
@@ -23,25 +27,15 @@ var active_worker: CharacterBody2D = null
 # =========================================================
 # RIGHT PANELS
 # =========================================================
-@onready var craft_detail: VBoxContainer = \
-	$MarginContainer/HBoxContainer/Right/CraftDetails
+@onready var craft_detail: VBoxContainer = $MarginContainer/HBoxContainer/Right/CraftDetails
+@onready var worker_equip_panel: HBoxContainer = $MarginContainer/HBoxContainer/Right/WorkerEquipPanel
 
-@onready var worker_equip_panel: HBoxContainer = \
-	$MarginContainer/HBoxContainer/Right/WorkerEquipPanel
-
-@onready var label_selected: Label = \
-	$MarginContainer/HBoxContainer/Right/CraftDetails/LabelSelected
-@onready var icon_big: TextureRect = \
-	$MarginContainer/HBoxContainer/Right/CraftDetails/IconBig
-@onready var label_desc: Label = \
-	$MarginContainer/HBoxContainer/Right/CraftDetails/LabelDesc
-@onready var vbox_ingredients: VBoxContainer = \
-	$MarginContainer/HBoxContainer/Right/CraftDetails/VBoxIngredients
-@onready var btn_craft: Button = \
-	$MarginContainer/HBoxContainer/Right/CraftDetails/BtnCraft
-
-@onready var btn_close: Button = \
-	$MarginContainer/HBoxContainer/ButtonClose
+@onready var label_selected: Label = $MarginContainer/HBoxContainer/Right/CraftDetails/LabelSelected
+@onready var icon_big: TextureRect = $MarginContainer/HBoxContainer/Right/CraftDetails/IconBig
+@onready var label_desc: Label = $MarginContainer/HBoxContainer/Right/CraftDetails/LabelDesc
+@onready var vbox_ingredients: VBoxContainer = $MarginContainer/HBoxContainer/Right/CraftDetails/VBoxIngredients
+@onready var btn_craft: Button = $MarginContainer/HBoxContainer/Right/CraftDetails/BtnCraft
+@onready var btn_close: Button = $MarginContainer/HBoxContainer/ButtonClose
 
 # =========================================================
 # EQUIP SLOTS
@@ -60,8 +54,7 @@ var active_worker: CharacterBody2D = null
 # =========================================================
 # LEFT GRID
 # =========================================================
-@onready var grid_recipes: GridContainer = \
-	$MarginContainer/HBoxContainer/Left/ScrollRecipes/GridRecipes
+@onready var grid_recipes: GridContainer = $MarginContainer/HBoxContainer/Left/ScrollRecipes/GridRecipes
 
 # =========================================================
 # STATE
@@ -73,9 +66,9 @@ var selected_recipe: RecipeData = null
 # READY
 # =========================================================
 func _ready() -> void:
-
 	worker_equip_panel.visible = false
 	craft_detail.visible = true
+
 	btn_planos.pressed.connect(func(): _set_tab(CraftingView.PLANOS))
 	btn_recursos.pressed.connect(func(): _set_tab(CraftingView.RECURSOS))
 	btn_herramientas.pressed.connect(func(): _set_tab(CraftingView.HERRAMIENTAS))
@@ -99,13 +92,12 @@ func _set_tab(view: CraftingView) -> void:
 	for c in grid_recipes.get_children():
 		c.queue_free()
 
-	if current_view == CraftingView.HERRAMIENTAS and active_worker != null:
+	if view == CraftingView.HERRAMIENTAS and active_worker != null:
 		_show_worker_equip_view()
-		_update_worker_equip_view()
 		_build_tool_list()
 	else:
 		_show_craft_view()
-		match current_view:
+		match view:
 			CraftingView.PLANOS:
 				_build_recipe_list()
 			CraftingView.RECURSOS:
@@ -130,21 +122,33 @@ func _show_worker_equip_view() -> void:
 	btn_craft.visible = false
 
 	label_selected.text = "Worker: %s" % active_worker.name
-	icon_big.texture = null
 	label_desc.text = "Equipamiento del trabajador"
 
-	_update_worker_equip_view() # 🔥 CLAVE
+	_update_worker_equip_view()
+
 # =========================================================
 # WORKER CONTROL
 # =========================================================
 func set_active_worker(w: CharacterBody2D) -> void:
+	# 🔌 desconectar anterior
+	if active_worker != null:
+		if active_worker.is_connected("cargo_changed", _on_worker_cargo_changed):
+			active_worker.disconnect("cargo_changed", _on_worker_cargo_changed)
+
 	active_worker = w
-	print("[CRAFT] Worker activo:", w.name)
+
+	# 🔌 conectar nuevo
+	if active_worker != null:
+		active_worker.cargo_changed.connect(_on_worker_cargo_changed)
+
 	_set_tab(CraftingView.HERRAMIENTAS)
 
 func clear_active_worker() -> void:
+	if active_worker != null:
+		if active_worker.is_connected("cargo_changed", _on_worker_cargo_changed):
+			active_worker.disconnect("cargo_changed", _on_worker_cargo_changed)
+
 	active_worker = null
-	print("[CRAFT] Worker deseleccionado")
 	_set_tab(CraftingView.PLANOS)
 
 # =========================================================
@@ -158,35 +162,39 @@ func _load_recipes() -> void:
 
 	for f in dir.get_files():
 		if f.ends_with(".tres"):
-			var r: RecipeData = load("res://data/recipes/" + f)
+			var r := load("res://data/recipes/" + f) as RecipeData
 			if r:
 				recipes.append(r)
 
 func _build_recipe_list() -> void:
 	for recipe in recipes:
-		var slot: RecipeSlot = recipe_slot_scene.instantiate()
+		var slot := recipe_slot_scene.instantiate()
 		grid_recipes.add_child(slot)
 		slot.set_recipe(recipe)
 		slot.pressed.connect(func(): _on_recipe_selected(recipe))
 
 func _on_recipe_selected(recipe: RecipeData) -> void:
 	selected_recipe = recipe
+
 	label_selected.text = recipe.nombre
 	icon_big.texture = recipe.icono
-	label_desc.text = recipe.id
+
+	var item := inventory_manager.get_item_data(recipe.resultado_id)
+	label_desc.text = item.descripcion if item else recipe.id
+
 	_build_ingredients(recipe)
 	_update_craft_button()
 
 # =========================================================
-# INGREDIENTS
+# INGREDIENTS / CRAFT
 # =========================================================
 func _build_ingredients(recipe: RecipeData) -> void:
 	for c in vbox_ingredients.get_children():
 		c.queue_free()
 
 	for id in recipe.ingredientes.keys():
-		var need := int(recipe.ingredientes[id])
-		var have := inventory_manager.get_amount(id)
+		var need: int = recipe.ingredientes[id]
+		var have: int = inventory_manager.get_amount(id)
 
 		var label := Label.new()
 		label.text = "%s  %d / %d" % [id, have, need]
@@ -205,9 +213,6 @@ func _update_craft_button() -> void:
 
 	btn_craft.disabled = false
 
-# =========================================================
-# CRAFT
-# =========================================================
 func _on_craft_pressed() -> void:
 	if selected_recipe == null:
 		return
@@ -221,7 +226,7 @@ func _on_craft_pressed() -> void:
 	)
 
 # =========================================================
-# RESOURCES
+# RESOURCES TAB
 # =========================================================
 func _build_resource_list() -> void:
 	for id in inventory_manager.get_all().keys():
@@ -230,37 +235,19 @@ func _build_resource_list() -> void:
 			var slot := recipe_slot_scene.instantiate()
 			grid_recipes.add_child(slot)
 			slot.set_resource(item, inventory_manager.get_amount(id))
-			slot.pressed.connect(func(): _show_resource_detail(item))
-
-func _show_resource_detail(item: ItemData) -> void:
-	label_selected.text = item.nombre
-	icon_big.texture = item.icono
-	label_desc.text = item.descripcion
-	btn_craft.disabled = true
 
 # =========================================================
-# TOOLS
+# TOOLS TAB
 # =========================================================
 func _build_tool_list() -> void:
-	for c in grid_recipes.get_children():
-		c.queue_free()
-
 	for id in inventory_manager.get_all().keys():
 		var item := inventory_manager.get_item_data(id)
-		if item == null:
-			continue
+		if item and item.item_type == ItemData.ItemType.HERRAMIENTA:
+			var slot := recipe_slot_scene.instantiate()
+			grid_recipes.add_child(slot)
+			slot.set_resource(item, 1)
+			slot.pressed.connect(func(): _on_tool_selected(item))
 
-		if item.item_type != ItemData.ItemType.HERRAMIENTA:
-			continue
-
-		var slot := recipe_slot_scene.instantiate()
-		grid_recipes.add_child(slot)
-		slot.set_resource(item, 1)
-
-		# 🔥 CLICK → EQUIPAR
-		slot.pressed.connect(func():
-			_on_tool_selected(item)
-		)
 # =========================================================
 # WORKER EQUIPMENT VIEW
 # =========================================================
@@ -268,12 +255,36 @@ func _update_worker_equip_view() -> void:
 	if active_worker == null:
 		return
 
-	var eq :Dictionary= active_worker.equipment
+	equip_slot_hand.setup(active_worker, inventory_manager)
+	equip_slot_off_hand.setup(active_worker, inventory_manager)
+	equip_slot_body.setup(active_worker, inventory_manager)
+	equip_slot_extra.setup(active_worker, inventory_manager)
+
+	var eq: Dictionary = active_worker.equipment
 
 	equip_slot_hand.set_item(eq.get("hand"))
 	equip_slot_off_hand.set_item(eq.get("off_hand"))
 	equip_slot_body.set_item(eq.get("body"))
-	equip_slot_extra.set_item(eq.get("extra"))
+
+	# EXTRA = CARGO
+	if active_worker.cargo.size() > 0:
+		equip_slot_extra.set_item(active_worker.cargo[0])
+	else:
+		equip_slot_extra.set_item(null)
+
+# 🔥 SEÑAL CLAVE
+func _on_worker_cargo_changed() -> void:
+	print("[CRAFT UI] cargo_changed → refresh")
+	_update_worker_equip_view()
+
+func _on_tool_selected(item: ItemData) -> void:
+	if active_worker == null:
+		return
+
+	if active_worker.equip_item(item):
+		inventory_manager.remove(item.id, 1)
+		_update_worker_equip_view()
+		_build_tool_list()
 
 # =========================================================
 # UTILS
@@ -282,6 +293,16 @@ func _on_inventory_changed(_id, _amount) -> void:
 	if selected_recipe:
 		_build_ingredients(selected_recipe)
 		_update_craft_button()
+
+	match current_view:
+		CraftingView.RECURSOS:
+			for c in grid_recipes.get_children():
+				c.queue_free()
+			_build_resource_list()
+		CraftingView.HERRAMIENTAS:
+			for c in grid_recipes.get_children():
+				c.queue_free()
+			_build_tool_list()
 
 func _clear_detail() -> void:
 	selected_recipe = null
@@ -294,17 +315,4 @@ func _clear_detail() -> void:
 
 func _on_close_pressed() -> void:
 	visible = false
-func _on_tool_selected(item: ItemData) -> void:
-	if active_worker == null:
-		print("[CRAFT] ❌ No hay worker activo")
-		return
-
-	print("[CRAFT] 🔧 Equipar:", item.nombre)
-
-	var success: bool = active_worker.equip_item(item)
-
-	if not success:
-		print("[CRAFT] ❌ No se pudo equipar")
-		return
-
-	_update_worker_equip_view()
+	emit_signal("panel_closed")

@@ -1,12 +1,15 @@
 extends Node2D
+class_name WorldResources
 
 @export var world: Node2D
 
 # =========================================================
 # DEFINICIÓN DE RECURSOS GRANDES (source_id | atlas)
 # =========================================================
+# ⚠️ CLAVE CRÍTICA:
+# El source_id DEBE coincidir con el TileSet
 const RESOURCE_DEFS := {
-	"0|(0, 0)": {
+	"1|(0, 0)": {   # 👈 FIX: antes era 0|(0,0)
 		"nombre": "Árbol",
 		"descripcion": "Un árbol que puedes talar.",
 		"item_id": "madera",
@@ -16,11 +19,8 @@ const RESOURCE_DEFS := {
 }
 
 # =========================================================
-# DEFINICIÓN DE RECURSOS PEQUEÑOS (SOLO ATLAS)
+# DEFINICIÓN DE RECURSOS PEQUEÑOS
 # =========================================================
-# ⚠️ IMPORTANTE:
-# Los recursos pequeños IGNORAN source_id porque
-# todos vienen del mismo TileSet simple
 const SMALL_RESOURCE_DEFS := {
 	"0": {
 		"nombre": "Rama",
@@ -38,7 +38,7 @@ const SMALL_RESOURCE_DEFS := {
 # ESTADO DE RECURSOS GRANDES
 # =========================================================
 # cell -> cantidad restante
-var resource_amounts: Dictionary[Vector2i, int] = {}
+var resource_amounts: Dictionary = {}
 
 # =========================================================
 # INIT RECURSOS GRANDES
@@ -68,13 +68,15 @@ func init_resources(resources_tilemap: TileMapLayer) -> void:
 # =========================================================
 func get_big_def(source_id: int, atlas: Vector2i) -> Dictionary:
 	var key := "%d|%s" % [source_id, atlas]
+	print("[DEBUG get_big_def] key:", key)
 	return RESOURCE_DEFS.get(key, {})
 
 # =========================================================
-# DEFINICIONES (SMALL)  ← 🔥 FIX CLAVE
+# DEFINICIONES (SMALL)
 # =========================================================
 func get_small_def(source_id: int, _atlas: Vector2i) -> Dictionary:
 	return SMALL_RESOURCE_DEFS.get(str(source_id), {})
+
 # =========================================================
 # CONSUMO DE RECURSOS GRANDES
 # =========================================================
@@ -100,16 +102,14 @@ func find_nearest_big_resource(
 	var best_dist := INF
 
 	for cell: Vector2i in resource_amounts.keys():
-
-		# 🔒 VALIDACIÓN CRÍTICA
 		if tilemap.get_cell_source_id(cell) == -1:
 			continue
 
 		var world_pos := tilemap.to_global(
 			tilemap.map_to_local(cell)
 		)
-		var d := from_pos.distance_to(world_pos)
 
+		var d := from_pos.distance_to(world_pos)
 		if d < best_dist:
 			best_dist = d
 			best_cell = cell
@@ -125,21 +125,21 @@ func get_best_edge_target_for_cell(
 	tilemap: TileMapLayer
 ) -> Vector2:
 
-	var world_pos: Vector2 = tilemap.to_global(
+	var world_pos := tilemap.to_global(
 		tilemap.map_to_local(cell)
 	)
 
-	var s: Vector2 = Vector2(tilemap.tile_set.tile_size)
+	var s := Vector2(tilemap.tile_set.tile_size)
 
-	var options: Array[Vector2] = [
+	var options := [
 		world_pos + Vector2(0, -s.y * 0.5),
 		world_pos + Vector2(0,  s.y * 0.5),
 		world_pos + Vector2(-s.x * 0.5, 0),
 		world_pos + Vector2( s.x * 0.5, 0)
 	]
 
-	var best: Vector2 = options[0]
-	for p: Vector2 in options:
+	var best :Vector2= options[0]
+	for p in options:
 		if w.global_position.distance_to(p) < w.global_position.distance_to(best):
 			best = p
 
@@ -157,7 +157,7 @@ func get_item_data(item_id: String) -> ItemData:
 	return load(path) as ItemData
 
 # =========================================================
-# PANEL DE RECURSO (UI) — SOLO BIG
+# PANEL DE RECURSO (UI)
 # =========================================================
 func update_resource_panel(
 	panel: Panel,
@@ -172,13 +172,13 @@ func update_resource_panel(
 	pressed_atlas: Vector2i
 ) -> void:
 
-	var def: Dictionary = get_big_def(pressed_source_id, pressed_atlas)
+	var def := get_big_def(pressed_source_id, pressed_atlas)
 	if def.is_empty():
 		panel.visible = false
 		return
 
-	var remaining: int = resource_amounts.get(pressed_cell, 0)
-	var item: ItemData = get_item_data(def["item_id"])
+	var remaining :int= resource_amounts.get(pressed_cell, 0)
+	var item := get_item_data(def["item_id"])
 	if item == null:
 		panel.visible = false
 		return
@@ -191,7 +191,7 @@ func update_resource_panel(
 		btn_collect.disabled = true
 		label_req.text = "Selecciona un worker"
 	else:
-		var req: String = String(def.get("tool_required", ""))
+		var req := String(def.get("tool_required", ""))
 		btn_collect.disabled = (req != "" and not active_worker.has_tool(req))
 		label_req.text = req
 

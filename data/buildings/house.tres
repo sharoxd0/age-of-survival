@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="BuildingData" load_steps=5 format=3 uid="uid://bou4gfsygetp7"]
+
+[ext_resource type="Script" uid="uid://buvr1de3ag4ri" path="res://data/buildings/modules/building_module.gd" id="1_22yc1"]
+[ext_resource type="Script" uid="uid://dovo1tcfcq4dc" path="res://data/buildings/modules/population_module.gd" id="2_j1ids"]
+[ext_resource type="Script" uid="uid://j10eb02g3jt6" path="res://data/buildings/building_data.gd" id="2_p1jm6"]
+
+[sub_resource type="Resource" id="Resource_wvt6a"]
+script = ExtResource("2_j1ids")
+metadata/_custom_type_script = "uid://dovo1tcfcq4dc"
+
+[resource]
+script = ExtResource("2_p1jm6")
+id = "house"
+display_name = "Casa"
+description = "Aumenta el límite de población."
+modules = Array[ExtResource("1_22yc1")]([SubResource("Resource_wvt6a")])
+metadata/_custom_type_script = "uid://j10eb02g3jt6"
